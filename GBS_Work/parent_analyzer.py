@@ -4,16 +4,20 @@ import GBS_Analysis_Functions
 
 file = './maf01_dp6_mm08.tab'
 
-#Reads a file, searches for parents (non-general right now), and returns the read stats (i.e., unique, non-unique, etc)
-def Parent_Stat_Reader(file):
-	#Read the file with the parent reads in, parse the parents out, and then relabel the columns to useful values
+#Reads a file, searches for parents (non-general right now), and returns an abridged dataframe
+def Parent_Info_Stripper(file):
 	df = GBS_Analysis_Functions.File_Reader(file)
 	locations = df.ix[:, 0:2]
 	parents = df.ix[:,-5:-1]
 	parents = pd.concat([locations,parents], axis = 1)
 	parent_labels = ['Chromosome', 'Pos', 'P1-1', 'P1-2', 'P2-1', 'P2-2']
 	parents.columns = parent_labels
-	print(parents)
+
+	return parents
+
+#Takes a dataframe containing the parent data (from Parent_Info_Stripper) and calculates how many unique site, how many non-unique sites, and how many bad site reads
+#are present
+def Parent_Stat_Reader(parents):
 	#set counters equal to zero
 	i=0
 	j=0
@@ -79,10 +83,28 @@ def Parent_Stat_Reader(file):
 	print("Check Sum")
 	print(i+j+h+l+m) 
 
+#Reads a data frame containing parent data, and puts the unique sites into two dictionaries: One where they are the same length (generally SNPs), and one where they are
+#different lengths (generally insertion/deletion sites); returns two dictionaries, where keys are the location, w/format Chromsome_Pos
+def Unique_Site_Stripper(parents):
+	unique_sites = OrderedDict()
+	insertion_sites = OrderedDict()
+	for row in parents.iterrows():
+		if row[1]['P1-1'] == './.' and row[1]['P1-2'] != './.':
+			row[1]['P1-1'] = row[1]['P1-2']
+		elif row[1]['P1-2'] == './.' and row[1]['P1-1'] != './.':
+			row[1]['P1-2'] = row[1]['P1-1']
 
-df = GBS_Analysis_Functions.File_Reader(file)
-df1 = df.ix[:, 0:2]
-df2 = df.ix[:, -5:-1]
-df3 = pd.concat([df1, df2], axis = 1)
+		if row[1]['P1-1'] == row[1]['P1-2'] and row[1]['P2-1'] == row[1]['P2-2']:
+			key = str(row[1]['Chromosome']) + '_' + str(row[1]['Pos']) 
+			if row[1]['P1-1'] != row[1]['P2-1']:
+				#Parent reads are the same (usually SNP)
+				if len(row[1]['P1-1']) == len(row[1]['P2-1']):
+					tup = (row[1]['P1-1'], row[1]['P2-1'])
+					unique_sites[key] = tup
+				else:
+					tup = (row[1]['P1-1'], row[1]['P2-1'])
+					insertion_sites[key] = tup
+	return unique_sites, insertion_sites
 
-print(df3)
+a, b = Unique_Site_Stripper(Parent_Info_Stripper(file))
+print(a)
