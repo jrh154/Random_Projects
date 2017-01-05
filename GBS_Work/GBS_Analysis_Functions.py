@@ -283,13 +283,19 @@ def Parent_Assignment(df, assigned_alleles):
 		if location not in assigned_alleles.keys():
 			df = df.drop(location, axis = 0)
 	df.to_csv('culled.csv')
+	
+	#Add counters for tracking program completion
 	total = len(assigned_alleles.keys())
 	i = 1
+
 	#Assign to parent; if it doesn't match either parent option, it is set to unassigned; skips cases where there was no initial read
 	for key in assigned_alleles:
-		print("Assigning %s, key %i of %i" %key, i, total)
+		#Allow for monitoring when processing large files
+		print("Assigning reads from %s, location %s of %s" % (key, i, total))
 		print(key)
 		i += 1
+
+		#The heart of the program; goes by rows
 		for j in range(0, len(df.columns)):
 			allele = df.ix[key,j]
 			df.loc[key,df.columns[j]]
