@@ -12,10 +12,14 @@ No set usage yet, just a (hopefully) useful set of scripts
 '''
 import pandas as pd
 from collections import OrderedDict, Counter
+import sys
+import time
 
 #Reads in a tab file and returns it as a DataFrame object; relabels columns as well to remove trash
 #(Currently relabeller is set for Chickpea format data; need to make more general in future)
 def File_Reader(file):
+	print("Reading File")
+
 	df = pd.read_csv(file, delimiter = '\t')
 	column_labels = []
 	for entry in df.columns:
@@ -24,11 +28,12 @@ def File_Reader(file):
 	return df
 
 #Renames the index of the dataframe to be the location in the format Chromosome_Position; also removes the location and reference columns
+#This needs to be made more efficienty (currently responsible for 1/2 run time)
 def Location_Relabeller(df):
-	location_tups = [(df.ix[i,0], df.ix[i,1]) for i in range(0,len(df.index))]
+	print("relabelling sites")
 	index = []
-	for tup in location_tups:
-		location = str(tup[0]) + '_' + str(tup[1])
+	for i in range(0, len(df.index)):
+		location = str(df.ix[i,0]) + '_' + str(df.ix[i,1])
 		if location not in index:
 			index.append(location)
 		else:
@@ -71,6 +76,7 @@ def File_Writer(data_dict, file_name):
 
 #Counts the frequency of each allele to allow for parent analysis; assumes 
 def Allele_Counter(df):
+	print("Counting Alleles")
 	df = df.ix[:, :-5]
 	data_dict = OrderedDict()
 	for row in df.iterrows():
@@ -106,6 +112,7 @@ def Allele_Counter_File_Writer(data_dict, file_name):
 
 #Reads a file, searches for parents (non-general right now), and returns an abridged dataframe
 def Parent_Info_Stripper(df):
+	print("Stripping Parents...not as dirty as it sounds")
 	locations = df.ix[:, 0:2]
 	parents = df.ix[:,-5:-1]
 	parents = pd.concat([locations,parents], axis = 1)
@@ -165,6 +172,7 @@ def Parent_Stat_Reader(parents):
 				h+=1
 
 	#Print out the results of the analysis
+	print("Here's the stats on the parent reads:")
 	print('Unique; same length')
 	print(i)
 	print('Unique; insertion/deletion')
@@ -185,6 +193,7 @@ def Parent_Stat_Reader(parents):
 #Reads a data frame containing parent data, and puts the unique sites into two dictionaries: One where they are the same length (generally SNPs), and one where they are
 #different lengths (generally insertion/deletion sites); returns two dictionaries, where keys are the location, w/format Chromsome_Pos
 def Unique_Site_Stripper(parents):
+	print("Picking the unique sites")
 	unique_sites = OrderedDict()
 	insertion_sites = OrderedDict()
 	for row in parents.iterrows():
@@ -220,6 +229,7 @@ def Unique_Site_Stripper(parents):
 #Reads the offspring identifiers, identifies the top two maximum values, and then
 #returns a dictionary in format: {Location: {Allele 1: #, Allele 2: #}}
 def Min_Max_Analyzer(data_dict):
+	print("Min/Max Analysis")
 	allele_analysis = OrderedDict()
 	for key in data_dict:
 		frequencies = {}
@@ -249,6 +259,7 @@ def Min_Max_Analyzer(data_dict):
 #Reads in a list of parent alleles and the counter list output frm Min_Max_Analyzer
 #Assigns parentage to each based on this
 def Allele_Assigner(allele_dict, parents_dict):
+	print("Parent Assignment: A Jerry Springer Episode")
 	assigned_allele = OrderedDict()
 	for key in parents_dict:
 		holder = {}
@@ -287,6 +298,7 @@ def Allele_Assigner(allele_dict, parents_dict):
 #Assigns a parent to the read from each offspring at each location (i.e., Loc 1, Offspring 1 was C/G, now is A, to show its from parent A)
 #Returns the result as a dataframe
 def Parent_Assignment(df, assigned_alleles):
+	print("And the father is...Assigning parents to each read")
 	#Remove any locations where there is no corresponding assigned allele (likely because parents didn't match)
 	for location in df.index:
 		if location not in assigned_alleles.keys():
@@ -317,33 +329,30 @@ def Parent_Assignment(df, assigned_alleles):
 				df.ix[key,j] = 'Unassigned'
 	return df
 
+#Takes two dictionaries and combines them into a third dictionary; this third dictionary is returned
+#NOTE: Only works with Python 3 or greater (syntax not valid in Python 2.7)
 def Dictionary_Combiner(d1, d2):
+	print("Combining into one unique dictionary")
 	total_dict = {**d1, **d2}
 	return total_dict
 
-#Run and test functions here
-file = 'maf01_dp6_mm08.tab'
 
-print("Reading File")
+
+#Run and test functions here
+file = './maf01_dp6_mm08.tab'
 df = File_Reader(file)
-print("relabelling sites")
+time.clock()
 df1 = Location_Relabeller(df)
-print("Counting Alleles")
+print(time.clock())
+
 data_dict = Allele_Counter(df)
-print("Min/Max Analysis")
 allele_dict = Min_Max_Analyzer(data_dict)
-print("Stripping Parents...not as dirty as it sounds")
 parents = Parent_Info_Stripper(df)
-print("Here's the stats on the parent reads:")
 Parent_Stat_Reader(parents)
-print("Picking the unique sites")
 unique_dict, insertion_dict = Unique_Site_Stripper(parents)
-print("Combining into one unique dictionary")
 all_sites = Dictionary_Combiner(unique_dict, insertion_dict)
-print("Parent Assignment: A Jerry Springer Episode")
 assigned_alleles = Allele_Assigner(allele_dict, all_sites)
-print(assigned_alleles)
-print("And the father is...Assigning parents to each read")
 results = Parent_Assignment(df1, assigned_alleles)
+
 print("Saving results")
-results.to_csv('maf01_dp6_mm08.csv')
+results.to_csv('test.csv')
