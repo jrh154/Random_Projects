@@ -29,7 +29,11 @@ def Location_Relabeller(df):
 	index = []
 	for tup in location_tups:
 		location = str(tup[0]) + '_' + str(tup[1])
-		index.append(location)
+		if location not in index:
+			index.append(location)
+		else:
+			location += '_1'
+			index.append(location)
 	df.index = index
 	df = df.drop(df.columns[0:3], axis=1)
 	return df
@@ -272,7 +276,12 @@ def Allele_Assigner(allele_dict, parents_dict):
 			print("whoops")
 			print(key)
 		#Add results to output dictionary
-		assigned_allele[key] = holder	
+		
+		if len(holder.keys()) == 2:
+			assigned_allele[key] = holder
+		else:
+			print("Error, either too many or too few keys")
+			print("Location: %s, Alleles: %s and %s" %(key, allele_1, allele_2))				
 	return assigned_allele
 
 #Assigns a parent to the read from each offspring at each location (i.e., Loc 1, Offspring 1 was C/G, now is A, to show its from parent A)
@@ -282,7 +291,6 @@ def Parent_Assignment(df, assigned_alleles):
 	for location in df.index:
 		if location not in assigned_alleles.keys():
 			df = df.drop(location, axis = 0)
-	df.to_csv('culled.csv')
 	
 	#Add counters for tracking program completion
 	total = len(assigned_alleles.keys())
@@ -314,7 +322,7 @@ def Dictionary_Combiner(d1, d2):
 	return total_dict
 
 #Run and test functions here
-file = 'test.tab'
+file = 'maf01_dp6_mm08.tab'
 
 print("Reading File")
 df = File_Reader(file)
@@ -338,4 +346,4 @@ print(assigned_alleles)
 print("And the father is...Assigning parents to each read")
 results = Parent_Assignment(df1, assigned_alleles)
 print("Saving results")
-results.to_csv('test.csv')
+results.to_csv('maf01_dp6_mm08.csv')
