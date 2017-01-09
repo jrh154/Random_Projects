@@ -1,13 +1,9 @@
 '''
 GBS Analysis Functions
-Written by J. Hayes, Last updated 1/4/2017
+Written by J. Hayes, Last updated 1/9/2017
 
 Description:
 A set of functions that are useful for analyzing the results of GBS sequence data
-Currently includes an allele counter and SNP stripper
-
-Usage:
-No set usage yet, just a (hopefully) useful set of scripts
 
 '''
 import pandas as pd
@@ -320,6 +316,13 @@ def Parent_Assignment(df, assigned_alleles):
 def Dictionary_Combiner(d1, d2):
 	total_dict = {**d1, **d2}
 	return total_dict
+
+def Site_File_Writer(site_dict, file_name):
+	with open(file_name, 'w') as f:
+		for loc in site_dict:
+			f.write(loc + ' ,' + str(site_dict[loc][0]).strip('(').strip(')') + ' ,' + str(site_dict[loc][1]).strip('(').strip(')'))
+			f.write('\n')
+
 
 #Run and test functions here
 file = 'maf01_dp6_mm08.tab'
