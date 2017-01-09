@@ -7,9 +7,9 @@ from collections import OrderedDict, Counter
 def File_Reader(file):
 	df = pd.read_csv(file, delimiter = '\t')
 	df = df.drop(df.columns[-1], axis = 1)
-	column_labels = []
-	for entry in df.columns:
-		column_labels.append(entry[4:17])
+	column_labels = df.columns[4:17]
+	#for entry in df.columns:
+	#	column_labels.append(entry[4:17])
 	df.columns = column_labels
 	return df
 
@@ -239,6 +239,7 @@ def Dictionary_Combiner(d1, d2):
 #Step 1: Assign the top two frequency reads to either parent A or parent B
 def Allele_Assigner(allele_dict, parents_dict):
 	assigned_allele = OrderedDict()
+	unassigned_alleles = OrderedDict({'Labels': (('Allele 1', 'Allele 2'), ('P1', 'P2'))})
 	for key in parents_dict:
 		holder = {}
 		#Set allele values for convienent referencing
@@ -257,7 +258,7 @@ def Allele_Assigner(allele_dict, parents_dict):
 		elif allele_2 == parents_dict[key][1]:
  			holder['B'] = allele_2
 
- 		#In case an allele can't be assigned (shouldn't happen, but just in case)
+ 		#In case an allele can't be assigned to a parent
 		if allele_1 != parents_dict[key][0] and allele_1 != parents_dict[key][1]:
 			print("Whoops")
 			print(key)
@@ -270,7 +271,10 @@ def Allele_Assigner(allele_dict, parents_dict):
 			assigned_allele[key] = holder
 		else:
 			print("Error, either too many or too few keys")
-			print("Location: %s, Alleles: %s and %s" %(key, allele_1, allele_2))				
+			print("Location: %s, Alleles: %s and %s" %(key, allele_1, allele_2))
+			unassigned_alleles[key] = ((allele_1, allele_2), (parents_dict[key][0], parents_dict[key][1]))				
+	
+	Site_File_Writer(unassigned_alleles, 'Unassigned_Alleles.csv')
 	return assigned_allele
 
 #Step 2: Assign the offspring reads to either parent A or parent B
@@ -308,16 +312,16 @@ def Read_Assignment(df, assigned_alleles):
 
 
 
-file = 'test.tab'
+file = 'maf01_dp6_mm08.tab'
 df = File_Reader(file)
 df = Location_Index_Relabeller(df)
 allele_count = Allele_Counter(df)
 min_max = Min_Max_Analyzer(allele_count)
 total_sites = Parent_Info_Stripper(df)
-#Parent_Stat_Reader(df)
-#assigned_alleles = Allele_Assigner(min_max, total_sites)
-#df = Read_Assignment(df, assigned_alleles)
-#print(df)
+Parent_Stat_Reader(df)
+assigned_alleles = Allele_Assigner(min_max, total_sites)
+df = Read_Assignment(df, assigned_alleles)
+df.to_csv("something.csv")
 
 
 #print(single_sites)
