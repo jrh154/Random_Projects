@@ -34,7 +34,8 @@ Usage: python Springer_Show.py tab_file.tab
 import sys
 import pandas as pd
 from collections import OrderedDict, Counter
-from os.path import isfile
+from os.path import isfile, isdir, join
+from os import mkdir
 
 
 #PART 1: READ THE FILE
@@ -209,7 +210,7 @@ def Parent_Info_Stripper(df):
 	#Write unique sites, insertion sites, and non-matching sites to csv files
 	Site_File_Writer(non_matching_locs, "./Output_Files/Non_Matching_Sites.csv")
 	Site_File_Writer(identical_sites, "./Output_Files/Identical_Sites.csv")
-	Site_File_Writer(unique_sites, './Output_Files/Unique_Sites.csv') 
+	Site_File_Writer(unique_sites, './Output_Files/Unique_Sites.csv')
 	Site_File_Writer(insertion_sites, './Output_Files/Insertion_Sites.csv')
 	
 	return total_sites
@@ -366,6 +367,8 @@ def Read_Assignment(df, assigned_alleles):
 	return df
 
 def Show_Runner(file):
+	if not isdir('./Output_Files'):
+		mkdir('./Output_Files')
 	df = Location_Index_Relabeller(File_Reader(file))
 	min_max = Min_Max_Analyzer(Allele_Counter(df))
 	total_sites = Parent_Info_Stripper(df)
