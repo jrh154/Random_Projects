@@ -345,6 +345,8 @@ def Read_Assignment(df, assigned_alleles):
 	total = len(assigned_alleles.keys())
 	i = 1
 
+	misreads = OrderedDict()
+
 	#Assign to parent; if it doesn't match either parent option, it is set to unassigned; skips cases where there was no initial read
 	for key in assigned_alleles:
 		#Allow for monitoring when processing large files
@@ -352,20 +354,52 @@ def Read_Assignment(df, assigned_alleles):
 		print(key)
 		i += 1
 
+		#Assign parent values to variable for easier reading
+		parent_a = assigned_alleles[key]['A']
+		parent_b = assigned_alleles[key]['B']
+
 		#The heart of the program; goes by rows
 		for j in range(0, len(df.columns)):
 			allele = df.ix[key,j]
-			df.loc[key,df.columns[j]]
-			if assigned_alleles[key]['A'] == allele:
-				df.ix[key,j] = 'A'
-			elif assigned_alleles[key]['B'] == allele:
-				df.ix[key,j] = 'B'
+			#df.loc[key,df.columns[j]] <-- Needed? Why is this here?
+			if allele == parent_a:
+				df.ix[key,j] = 'a'
+			elif allele == parent_b:
+				df.ix[key,j] = 'b'
 			elif allele == './.':
-				pass
+				df.ix[key,j] = "-"
 			else:
-				df.ix[key,j] = 'Unassigned'
+				if heterozygous_case(allele, parent_a, parent_b):
+					df.ix[key,j] = 'h'
+				else:
+					print("Whoops, I can't seem to read this")
+					print("Check %s at location %s" %(df.columns[j], key))
+					misreads[key] = ((df.columns[j], allele), (parent_a, parent_b))
+					df.ix[key,j] = '-'
+
+	Site_File_Writer(misreads, './Output_Files/Misread_Sites.csv')
 	return df
 
+#Deals with cases where the offspring read might be heterozygous
+def heterozygous_case(allele, parent_a, parent_b):
+	allele = allele.split('/')
+	parent_a = parent_a.split('/')
+	parent_b = parent_b.split('/')
+
+	if allele[0] == parent_a[0] and allele[1] == parent_b[0]:
+		assignment = True
+	elif allele[0] == parent_a[0] and allele[1] == parent_b[1]:
+		assignment = True
+	elif allele[0] == parent_a[1] and allele[1] == parent_b[0]:
+		assignment = True
+	elif allele[0] == parent_a[1] and allele[1] == parent_b[1]:
+		assignment = True
+	else:
+		assignment = False
+
+	return assignment
+
+#The script that runs the program
 def Show_Runner(file):
 	if not isdir('./Output_Files'):
 		mkdir('./Output_Files')
