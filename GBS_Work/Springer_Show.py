@@ -374,11 +374,17 @@ def Read_Assignment(df, assigned_alleles):
 				else:
 					print("Whoops, I can't seem to read this")
 					print("Check %s at location %s" %(df.columns[j], key))
-					misreads[key] = ((df.columns[j], allele), (parent_a, parent_b))
+					if key not in misreads.keys():
+						misreads[key] = [(df.columns[j], allele, parent_a, parent_b)]
+					else:
+						misreads[key].append((df.columns[j], allele, parent_a, parent_b))
 					df.ix[key,j] = '-'
 
-	Site_File_Writer(misreads, './Output_Files/Misread_Sites.csv')
-	return df
+	#Save read assignment results to files
+	print("Saving Misread_Sites.csv...")
+	misread_file_writer(misreads)
+	print("Saving Final Output...")
+	df.to_csv("./Output_Files/Assigned_Offspring_Reads.csv")
 
 #Deals with cases where the offspring read might be heterozygous
 def heterozygous_case(allele, parent_a, parent_b):
@@ -394,10 +400,34 @@ def heterozygous_case(allele, parent_a, parent_b):
 		assignment = True
 	elif allele[0] == parent_a[1] and allele[1] == parent_b[1]:
 		assignment = True
+	elif allele[0] == parent_b[0] and allele[1] == parent_a[0]:
+		assignment = True
+	elif allele[0] == parent_b[0] and allele[1] == parent_a[1]:
+		assignment = True
+	elif allele[0] == parent_b[1] and allele[1] == parent_a[0]:
+		assignment = True
+	elif allele[0] == parent_b[1] and allele[1] == parent_a[1]:
+		assignment = True
 	else:
 		assignment = False
 
 	return assignment
+
+#Writes the misreads to a separate CSV file
+def misread_file_writer(misread_dict):
+	with open("./Output_files/Misreads.csv", 'w') as f:
+		f.write('Location,Plant Line,Read,Parent Read A,Parent Read B\n')
+		for key in misread_dict:
+			f.write(key)
+			f.write(',')
+			for misread in misread_dict[key]:
+				for element in misread:
+					f.write(element)
+					f.write(',')
+				f.write('\n')
+				f.write(',')
+			f.write('\n')
+
 
 #The script that runs the program
 def Show_Runner(file):
@@ -407,8 +437,7 @@ def Show_Runner(file):
 	min_max = Min_Max_Analyzer(Allele_Counter(df))
 	total_sites = Parent_Info_Stripper(df)
 	assigned_alleles = Allele_Assigner(min_max, total_sites)
-	df = Read_Assignment(df, assigned_alleles)
-	df.to_csv("./Output_Files/Assigned_Offspring_Reads.csv")
+	Read_Assignment(df, assigned_alleles)
 
 #Parse the user input, then run the program
 if len(sys.argv) == 2:
