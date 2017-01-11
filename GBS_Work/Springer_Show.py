@@ -410,6 +410,7 @@ def Show_Runner(file):
 	df = Read_Assignment(df, assigned_alleles)
 	df.to_csv("./Output_Files/Assigned_Offspring_Reads.csv")
 
+#Parse the user input, then run the program
 if len(sys.argv) == 2:
 	if isfile(sys.argv[1]):
 		Show_Runner(sys.argv[1])
