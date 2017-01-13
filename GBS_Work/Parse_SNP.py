@@ -63,7 +63,7 @@ if len(sys.argv) == 3:
 
 elif len(sys.argv) == 2:
 	if isfile(sys.argv[1]):
-		file_out = sys.argv[1][:-4] + '_SNP.tab'
+		file_out = sys.argv[1][:-4] + '_SNP.csv'
 		Parse_SNP(sys.argv[1], file_out)
 	else:
 		sys.exit("Sorry, I can't find the .tab file to input; please try again")
