@@ -23,7 +23,7 @@ import sys
 
 def Parse_SNP(file_in, file_out):
 	#Open files
-	df = pd.read_csv(file_in, delimiter = '\t')
+	df = pd.read_csv(file_in, delimiter = '\t', dtype = 'unicode')
 	data_dict = OrderedDict()
 
 	#Parse through the data file
